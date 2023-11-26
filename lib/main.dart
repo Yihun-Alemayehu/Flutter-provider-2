@@ -98,7 +98,7 @@ class HomePage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Row(
+          const Row(
             children: [
               Expanded(
                 child: CheapWidget(),
@@ -108,7 +108,7 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          Row(
+          const Row(
             children: [
               Expanded(child: ObjectProviderWidget()),
             ],
@@ -119,13 +119,13 @@ class HomePage extends StatelessWidget {
                 onPressed: () {
                   context.read<ObjectProvider>().start();
                 },
-                child: Text('Start'),
+                child: const Text('Start'),
               ),
               TextButton(
                 onPressed: () {
                   context.read<ObjectProvider>().stop();
                 },
-                child: Text('Stop'),
+                child: const Text('Stop'),
               ),
             ],
           )
