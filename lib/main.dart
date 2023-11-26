@@ -4,14 +4,17 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    title: 'Flutter Demo',
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      useMaterial3: true,
+  runApp(ChangeNotifierProvider(
+    create: (_) => ObjectProvider(),
+    child: MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
     ),
-    home: const HomePage(),
   ));
 }
 
@@ -46,6 +49,41 @@ class ObjectProvider extends ChangeNotifier {
 
   CheapObject get cheapObject => _cheapObject;
   ExpensiveObject get expensiveObject => _expensiveObject;
+
+  ObjectProvider()
+      : id = const Uuid().v4(),
+        _cheapObject = CheapObject(),
+        _expensiveObject = ExpensiveObject() {
+    start();
+  }
+
+  @override
+  void notifyListeners() {
+    id = const Uuid().v4();
+    super.notifyListeners();
+  }
+
+  void start() {
+    _cheapObjectStreamSubs = Stream.periodic(
+      const Duration(seconds: 1),
+    ).listen((_) {
+      _cheapObject = CheapObject();
+      notifyListeners();
+    });
+
+    _expensiveObjectStreamSubs = Stream.periodic(
+      const Duration(seconds: 10),
+    ).listen((_) {
+      _expensiveObject = ExpensiveObject();
+      notifyListeners();
+    });
+  }
+
+  void stop() {
+    _cheapObjectStreamSubs.cancel();
+    _expensiveObjectStreamSubs.cancel();
+    //notifyListeners();
+  }
 }
 
 class HomePage extends StatelessWidget {
@@ -58,7 +96,105 @@ class HomePage extends StatelessWidget {
         title: const Text('Home Page'),
         centerTitle: true,
       ),
-      body: Container(),
+      body: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: CheapWidget(),
+              ),
+              Expanded(
+                child: ExpensiveWidget(),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(child: ObjectProviderWidget()),
+            ],
+          ),
+          Row(
+            children: [
+              TextButton(
+                onPressed: () {
+                  context.read<ObjectProvider>().start();
+                },
+                child: Text('Start'),
+              ),
+              TextButton(
+                onPressed: () {
+                  context.read<ObjectProvider>().stop();
+                },
+                child: Text('Stop'),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class ExpensiveWidget extends StatelessWidget {
+  const ExpensiveWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final expensiveObject = context.select<ObjectProvider, ExpensiveObject>(
+      (provider) => provider.expensiveObject,
+    );
+    return Container(
+      height: 100,
+      color: Colors.blueAccent,
+      child: Column(
+        children: [
+          const Text('Expensive Widget'),
+          const Text('Last Updated'),
+          Text(expensiveObject.lastUpdated)
+        ],
+      ),
+    );
+  }
+}
+
+class CheapWidget extends StatelessWidget {
+  const CheapWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final cheapObject = context.select<ObjectProvider, CheapObject>(
+      (provider) => provider.cheapObject,
+    );
+    return Container(
+      height: 100,
+      color: Colors.amber,
+      child: Column(
+        children: [
+          const Text('Cheap Widget'),
+          const Text('Last Updated'),
+          Text(cheapObject.lastUpdated)
+        ],
+      ),
+    );
+  }
+}
+
+class ObjectProviderWidget extends StatelessWidget {
+  const ObjectProviderWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<ObjectProvider>();
+    return Container(
+      height: 100,
+      color: Colors.deepPurple[300],
+      child: Column(
+        children: [
+          const Text('Object Proovider Widget'),
+          const Text('ID'),
+          Text(provider.id)
+        ],
+      ),
     );
   }
 }
